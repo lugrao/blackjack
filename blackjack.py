@@ -77,6 +77,24 @@ class Player:
         return total_sum
 
 
+def print_hand(player, round=""):
+    print("\nYour hand:" if player.name == "HUMAN" else "\nDealer's hand:")
+    if player.name == "DEALER" and round == "1st":
+        print(f"{dealer.hand[0]}"
+              "\nThe other card is faced down."
+              f"\nTotal value: {dealer.hand[0].value} + ??")
+    else:
+        for card in player.hand:
+            print(card)
+        print(f"Total value: {player.hand_value()}")
+
+
+def deal_cards(n):
+    for i in range(n):
+        human.hit(deck)
+        dealer.hit(deck)
+
+
 # Game Setup
 human = Player("HUMAN")
 dealer = Player("DEALER")
@@ -84,16 +102,16 @@ dealer = Player("DEALER")
 deck = Deck()
 deck.shuffle()
 
-# Game
+# Game on
 while True:
 
     # check if no more money or cards:
     if human.bankroll == 0:
-        print("No more money to bet! Game over!"
+        print("\nNo more money to bet! Game over!"
               f"\nYou ended up with ${human.bankroll}. You should sell your car and play again.")
         break
     if len(deck.cards) < 10:
-        print("Not enough cards to play, the game is over!!"
+        print("\nNot enough cards to play, the game is over!!"
               f"\nYou ended up with ${human.bankroll}. Remember to keep gambling no matter what.")
         break
 
@@ -105,37 +123,36 @@ while True:
         try:
             bet = int(input("Type the amount yo want to bet: "))
         except:
-            print("Sorry, I only accept numbers.")
+            print("\nSorry, I only accept numbers.")
         if bet > 0 and bet <= human.bankroll:
             break
         else:
             print(
-                f"You must place a bet higher than $0 and lower than or equal to ${human.bankroll}.")
+                f"\nYou must place a bet higher than $0 and lower than or equal to ${human.bankroll}.")
 
     print(f'Your bet is ${bet}.')
 
     # hand on
-    hand_on = True
-    hand_result = "..."
+    round_on = True
+    round_result = "..."
 
     # card dealing
+    deal_cards(2)
+    print_hand(human)
+    print_hand(dealer, round="1st")
 
-    for i in range(2):
-        human.hit(deck)
-        dealer.hit(deck)
+   # human's turn
+    while round_on:
 
-    print("\nYour hand:")
-    for card in human.hand:
-        print(card)
-    print(f"Total value: {human.hand_value()}")
+        if human.hand_value() > 21:
+            print("\nYou busted! Dealer wins this one.")
+            round_result = "dealer wins"
+            round_on = False
+            break
 
-    print("\nDealer's hand:"
-          f"\n{dealer.hand[0]}"
-          "\nThe other card is faced down."
-          f"\nTotal value: {dealer.hand[0].value} + ??")
+        if human.hand_value() == 21:
+            break
 
-    # human's turn
-    while hand_on:
         next_move = ""
         while next_move not in ["hit", "stay"]:
             next_move = input(
@@ -143,65 +160,51 @@ while True:
 
         if next_move == "hit":
             human.hit(deck)
-            print("\nYour hand:")
-            for card in human.hand:
-                print(card)
-            print(f'Total value: {human.hand_value()}')
+            print_hand(human)
 
         if next_move == "stay":
             print("\nDealer's turn.")
             break
 
-        if human.hand_value() > 21:
-            print("You busted! Dealer wins this one.")
-            hand_result = "dealer wins"
-            hand_on = False
-            break
-
-        if human.hand_value() == 21:
-            break
-
     input("\n[Enter to continue]")
 
     # dealer's turn
-    while hand_on:
+    while round_on:
         print("\nThe Dealer revealed his faced down card.")
-        print("Dealer's hand:")
-        for card in dealer.hand:
-            print(card)
-        print(f"Total value: {dealer.hand_value()}")
+        print_hand(dealer)
 
         input("\n[Enter to continue]")
 
         while dealer.hand_value() < human.hand_value():
             dealer.hit(deck)
-            print(f"\nThe Dealer drew another card. It's the {dealer.hand[-1]}."
-                  f"\nTotal value of his hand: {dealer.hand_value()}")
+            print(
+                f"\nThe Dealer drew another card. It's the {dealer.hand[-1]}.")
+            print_hand(dealer)
 
             if dealer.hand_value() > 21:
                 print("\nThe Dealer busted! HUMAN WINS!!")
-                hand_result = "human wins"
-                hand_on = False
+                round_result = "human wins"
+                round_on = False
                 break
             input("\n[Enter to continue]")
         break
 
     # compare hands
-    if hand_on:
+    if round_on:
         if human.hand_value() > dealer.hand_value():
             print("\nHUMAN WINS!")
-            hand_result = "human wins"
+            round_result = "human wins"
         elif human.hand_value() < dealer.hand_value():
             print("\nDEALER WINS!")
-            hand_result = "dealer wins"
+            round_result = "dealer wins"
         else:
             print("\nIt's a TIE!")
-            hand_result = "tie"
+            round_result = "tie"
 
     # collect bet
-    if hand_result == "human wins":
+    if round_result == "human wins":
         human.add_money(bet)
-    elif hand_result == "dealer wins":
+    elif round_result == "dealer wins":
         human.remove_money(bet)
 
     # empty player hands
