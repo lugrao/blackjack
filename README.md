@@ -1,2 +1,2 @@
-# Blackjack
-Un blackjack con reglas simplificadas para seguir aprendiendo OOP con Python.
+# Blackjack CLI
+A command line blackjack game with simplified rules.
