@@ -77,12 +77,13 @@ class Player:
         return total_sum
 
 
-def print_hand(player, round=""):
-    print("\nYour hand:" if player.name == "HUMAN" else "\nDealer's hand:")
-    if player.name == "DEALER" and round == "1st":
-        print(f"{dealer.hand[0]}"
+def print_hand(player, hide_one_card=False):
+    print("\nYour hand:" if player.name ==
+          human.name else "\nTHE DEALER's hand:")
+    if hide_one_card == True:
+        print(f"{player.hand[0]}"
               "\nThe other card is faced down."
-              f"\nTotal value: {dealer.hand[0].value} + ??")
+              f"\nTotal value: {player.hand[0].value} + ??")
     else:
         for card in player.hand:
             print(card)
@@ -95,33 +96,85 @@ def deal_cards(n):
         dealer.hit(deck)
 
 
+def play_again(ask):
+    output = {"y": True, "n": False}
+    answer = input(f'{ask}').lower()
+    while answer not in ["y", "n"]:
+        answer = input(
+            "\nI didn't get it. Type Y if the answer is YES and N if the answer is NO: ").lower()
+    return output[answer]
+
+
+def reinit_and_shuffle_deck():
+    deck.__init__()
+    deck.shuffle()
+
+
+def empty_hands():
+    human.hand = []
+    dealer.hand = []
+
+
 # Game Setup
-human = Player("HUMAN")
-dealer = Player("DEALER")
+print("\n\nFirst of all, what's your name?")
+human = Player(input('\nEnter your name: ').upper())
+dealer = Player("THE DEALER")
 
 deck = Deck()
 deck.shuffle()
 
-# Game on
-while True:
+print(f"\n{human.name}! What a nice name! OK, let's start right away.")
+input('\n[Press Enter to continue]')
 
+# Game on
+games = 0
+
+while True:
     # check if no more money or cards:
     if human.bankroll == 0:
         print("\nNo more money to bet! Game over!"
-              f"\nYou ended up with ${human.bankroll}. You should sell your car and play again.")
-        break
-    if len(deck.cards) < 10:
-        print("\nNot enough cards to play, the game is over!!"
-              f"\nYou ended up with ${human.bankroll}. Remember to keep gambling no matter what.")
-        break
+              f"\n\nYou ended up with ${human.bankroll}. You should sell your car and play again.\n")
+
+        if not play_again(ask='Do you want to play again? Y/N: '):
+            print(
+                "\n\n\nAre you sure you want to quit? What if next time it went better?\n")
+            break
+        human.bankroll = 75 - games * games
+        reinit_and_shuffle_deck()
+        empty_hands()
+        games += 1
+
+        if human.bankroll < 1:
+            print("\n\nNo more money to bet! Game over!\n")
+            if not play_again(ask='Would you be interested in selling one of your organs in order to keep playing? Y/N: '):
+                print(
+                    "\nIt's understandable. After all, keeping our organs in their place allow us to continue gambling, right?\n")
+                break
+            human.bankroll = 1000
+            reinit_and_shuffle_deck()
+            empty_hands()
+            games += 1
+            print(
+                f"\nYou sold one of your organs and now you have ${human.bankroll}. Excelent decision, congratulations!")
+            input("\n[Press Enter to continue]")
+
+    if len(deck.cards) < 13:
+        print("\nNot enough cards to play!")
+        if not play_again(ask='Shuffle and deal again? Y/N: '):
+            print(
+                "\nBetting money that you don't have can always end up being a good thing. Good bye!")
+            break
+        reinit_and_shuffle_deck()
+        empty_hands()
+        games += 1
 
     # placing the bet
     bet = 0
-    print(f'\n\nYou have up to ${human.bankroll} to bet.')
     betting = True
     while betting:
         try:
-            bet = int(input("Type the amount yo want to bet: "))
+            bet = int(
+                input(f"\nYou have ${human.bankroll}. Type the amount yo want to bet: "))
         except:
             print("\nSorry, I only accept numbers.")
         if bet > 0 and bet <= human.bankroll:
@@ -130,22 +183,23 @@ while True:
             print(
                 f"\nYou must place a bet higher than $0 and lower than or equal to ${human.bankroll}.")
 
-    print(f'Your bet is ${bet}.')
+    print(f'\nYour bet is ${bet}.')
 
-    # hand on
+    # round on
     round_on = True
     round_result = "..."
 
     # card dealing
     deal_cards(2)
     print_hand(human)
-    print_hand(dealer, round="1st")
+    input("\n[Press Enter to see THE DEALER's hand]")
+    print_hand(dealer, hide_one_card=True)
 
    # human's turn
     while round_on:
 
         if human.hand_value() > 21:
-            print("\nYou busted! Dealer wins this one.")
+            print("\nYou busted! THE DEALER wins this one.")
             round_result = "dealer wins"
             round_on = False
             break
@@ -163,43 +217,46 @@ while True:
             print_hand(human)
 
         if next_move == "stay":
-            print("\nDealer's turn.")
+            print("\nTHE DEALER's turn.")
             break
 
-    input("\n[Enter to continue]")
+    input("\n[Press Enter to continue]")
 
     # dealer's turn
     while round_on:
-        print("\nThe Dealer revealed his faced down card.")
+        print("\nTHE DEALER revealed his faced down card.")
         print_hand(dealer)
 
-        input("\n[Enter to continue]")
+        input("\n[Press Enter to continue]")
 
-        while dealer.hand_value() < human.hand_value():
+        while dealer.hand_value() < 17:
             dealer.hit(deck)
             print(
-                f"\nThe Dealer drew another card. It's the {dealer.hand[-1]}.")
+                f"\nTHE DEALER drew another card. It's the {dealer.hand[-1]}.")
             print_hand(dealer)
 
             if dealer.hand_value() > 21:
-                print("\nThe Dealer busted! HUMAN WINS!!")
+                print(f"\nTHE DEALER busted! {human.name} WINS!")
                 round_result = "human wins"
                 round_on = False
                 break
-            input("\n[Enter to continue]")
+            input("\n[Press Enter to continue]")
         break
 
     # compare hands
     if round_on:
         if human.hand_value() > dealer.hand_value():
-            print("\nHUMAN WINS!")
+            print(f"\n{human.name} WINS!")
             round_result = "human wins"
+            input("\n[Press Enter to continue]")
         elif human.hand_value() < dealer.hand_value():
-            print("\nDEALER WINS!")
+            print("\nTHE DEALER WINS!")
             round_result = "dealer wins"
+            input("\n[Press Enter to continue]")
         else:
             print("\nIt's a TIE!")
             round_result = "tie"
+            input("\n[Press Enter to continue]")
 
     # collect bet
     if round_result == "human wins":
@@ -208,5 +265,4 @@ while True:
         human.remove_money(bet)
 
     # empty player hands
-    human.hand = []
-    dealer.hand = []
+    empty_hands()
